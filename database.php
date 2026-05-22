@@ -170,12 +170,17 @@ class SupabaseConnection
 
         if ($url) {
             $config = parse_url($url);
-            $host = $config['host'] ?? '';
-            $port = (int) ($config['port'] ?? 5432);
-            $database = isset($config['path']) ? ltrim($config['path'], '/') : 'postgres';
-            $user = isset($config['user']) ? rawurldecode($config['user']) : '';
-            $password = isset($config['pass']) ? rawurldecode($config['pass']) : '';
-        } else {
+
+            if (is_array($config) && !empty($config['host'])) {
+                $host = $config['host'];
+                $port = (int) ($config['port'] ?? 5432);
+                $database = isset($config['path']) ? ltrim($config['path'], '/') : 'postgres';
+                $user = isset($config['user']) ? rawurldecode($config['user']) : '';
+                $password = isset($config['pass']) ? rawurldecode($config['pass']) : '';
+            }
+        }
+
+        if (empty($host) || empty($password)) {
             $host = getenv('DB_HOST');
             $port = (int) (getenv('DB_PORT') ?: 5432);
             $database = getenv('DB_NAME') ?: 'postgres';
@@ -188,7 +193,8 @@ class SupabaseConnection
         if (empty($host) || empty($password)) {
             die(
                 "Connection failed: Missing Supabase database settings. " .
-                "Set SUPABASE_DB_URL in Render environment variables or create a local .env file from .env.example."
+                "Set SUPABASE_DB_URL in Render environment variables, or set DB_HOST, DB_USER, and DB_PASSWORD. " .
+                "If your password contains special characters, URL-encode it in SUPABASE_DB_URL or use the separate DB_* variables."
             );
         }
 
