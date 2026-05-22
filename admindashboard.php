@@ -9,9 +9,7 @@ ob_start();
 
 // ✅ Check if admin is logged in
 if (!isset($_SESSION['admin_email'])) {
-    echo "<script>
-        window.location.href = 'log_admin.php';
-    </script>";
+    header("Location: log_admin.php");
     exit();
 }
 

@@ -19,23 +19,32 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
 
     <style>
         html, body {
-            overflow: auto;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE 10+ */
+            overflow-x: hidden;
+            overflow-y: auto;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
-            overscroll-behavior: none;
+            min-height: 100%;
         }
 
         html::-webkit-scrollbar, body::-webkit-scrollbar {
-            display: none;
+            width: 10px;
+            height: 10px;
         }
-        
+
+        html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
+            background: rgba(109, 46, 58, 0.35);
+            border-radius: 10px;
+        }
+
+        html::-webkit-scrollbar-track, body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
         body {
             font-family: 'Poppins', sans-serif !important;
             padding-top: 0px;
-            font color: #fff !important;
+            color: #6d2e3a;
+            min-height: 100vh;
         }
 
         .navbar-main,
