@@ -52,13 +52,13 @@ $allResult = $conn->query($allSql);
 /* For autocomplete search */
 $customer_names = [];
 if ($allResult && $allResult->num_rows > 0) {
-    mysqli_data_seek($allResult, 0);
+    $allResult->data_seek(0);
     while ($c = $allResult->fetch_assoc()) {
         if (!empty($c['customer_name'])) {
             $customer_names[] = $c['customer_name'];
         }
     }
-    mysqli_data_seek($allResult, 0);
+    $allResult->data_seek(0);
 }
 ?>
 

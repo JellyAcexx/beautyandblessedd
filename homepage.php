@@ -1730,8 +1730,8 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                         ON p.category_id = c.category_id
                         GROUP BY c.category_id
                     ";
-                    $catResult = mysqli_query($conn, $catQuery);
-                    while ($cat = mysqli_fetch_assoc($catResult)) { ?>
+                    $catResult = $conn->query($catQuery);
+                    while ($cat = $catResult->fetch_assoc()) { ?>
                         <li class="nav-item" role="presentation">
                         <button class="nav-link" style="color: #6d2e3a;" id="tab-<?php echo $cat['category_id']; ?>" data-bs-toggle="tab" 
                                 data-bs-target="#cat-<?php echo $cat['category_id']; ?>" type="button" role="tab">
@@ -1765,9 +1765,9 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
             </li>
 
             <?php 
-            mysqli_data_seek($catResult, 0);
+            $catResult->data_seek(0);
 
-            while ($cat = mysqli_fetch_assoc($catResult)) { ?>
+            while ($cat = $catResult->fetch_assoc()) { ?>
                 <li class="nav-item">
                     <button class="nav-link mb-0"
                             style="color:#6d2e3a;"
@@ -1855,8 +1855,8 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
 
             <div class="tab-content" id="myTabContent">
                 <?php 
-                    mysqli_data_seek($catResult, 0);
-                    while ($cat = mysqli_fetch_assoc($catResult)) { ?>
+                    $catResult->data_seek(0);
+                    while ($cat = $catResult->fetch_assoc()) { ?>
                     <div class="tab-pane fade" id="cat-<?php echo $cat['category_id']; ?>" role="tabpanel">
                         <?php
                         include 'database.php';
@@ -1865,14 +1865,14 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                             FROM products p 
                             LEFT JOIN inventory i ON i.product_id = p.product_id 
                             WHERE p.category_id = " . $cat['category_id'];
-                        $prodResult = mysqli_query($conn, $prodQuery);
+                        $prodResult = $conn->query($prodQuery);
                         ?>
 
                         <div class="container py-0 mt-0">
                             <div class="row product-grid g-3 justify-content-center" id="productGrid<?php echo $cat['category_id']; ?>">
 
                                 <?php
-                                while ($row = mysqli_fetch_assoc($prodResult)) {
+                                while ($row = $prodResult->fetch_assoc()) {
                                     $imgPath = $row['image_path'];
 
                                     if (!str_starts_with($imgPath, 'pictures/')) {
@@ -1947,18 +1947,18 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     <?php
                         if (isset($_GET['q']) && !empty(trim($_GET['q']))) {
                             include 'database.php';
-                            $search = mysqli_real_escape_string($conn, $_GET['q']);
+                            $search = $conn->real_escape_string($_GET['q']);
                             $prodQuery = "
                                 SELECT p.*, i.stocks 
                                 FROM products p 
                                 LEFT JOIN inventory i ON i.product_id = p.product_id 
                                 WHERE p.product_name LIKE '%$search%'";
-                            $prodResult = mysqli_query($conn, $prodQuery);
+                            $prodResult = $conn->query($prodQuery);
 
-                            if (mysqli_num_rows($prodResult) > 0) { ?>
+                            if ($prodResult && $prodResult->num_rows > 0) { ?>
                                 <div class="container search-results-container">
                                     <div class="row g-4 justify-content-center" id="searchResultsGrid">
-                                        <?php while ($row = mysqli_fetch_assoc($prodResult)) {
+                                        <?php while ($row = $prodResult->fetch_assoc()) {
                                             $imgPath = $row['image_path'];
                                             if (!str_starts_with($imgPath, 'pictures/')) $imgPath = 'pictures/' . $imgPath;
                                             if (empty($imgPath) || !file_exists($imgPath)) $imgPath = 'pictures/noimage.png';

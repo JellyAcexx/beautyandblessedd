@@ -2,21 +2,25 @@
 
 This project is now deployable on Render as a Docker web service.
 
-## Required Render environment variables
+## Required Render environment variables for Supabase
 
 Set these in the Render dashboard:
 
-- `DB_HOST`
-- `DB_PORT` default: `3306`
-- `DB_NAME` default: `u937180775_bblessed_db`
-- `DB_USER`
-- `DB_PASSWORD`
+- `SUPABASE_DB_URL`
 
-Alternatively, you can set one MySQL-style `DATABASE_URL`, for example:
+Use the direct PostgreSQL connection string from Supabase, usually similar to:
 
 ```text
-mysql://user:password@host:3306/database_name
+postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
 ```
+
+You can also set separate values instead:
+
+- `DB_HOST`
+- `DB_PORT` default: `5432`
+- `DB_NAME` default: `postgres`
+- `DB_USER` default: `postgres`
+- `DB_PASSWORD`
 
 ## Deploy steps
 
@@ -24,7 +28,7 @@ mysql://user:password@host:3306/database_name
 2. In Render, create a new Web Service.
 3. Select the repository.
 4. Choose Docker runtime.
-5. Add the database environment variables above.
+5. Add `SUPABASE_DB_URL` or the separate database environment variables above.
 6. Deploy.
 
 The app starts at `homepage.php` because `.htaccess` sets:

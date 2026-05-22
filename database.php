@@ -1,27 +1,285 @@
 <?php
-$databaseUrl = getenv('DATABASE_URL');
-
-if ($databaseUrl) {
-    $databaseConfig = parse_url($databaseUrl);
-
-    $host = $databaseConfig['host'] ?? 'localhost';
-    $user = $databaseConfig['user'] ?? 'root';
-    $pass = $databaseConfig['pass'] ?? '';
-    $db   = isset($databaseConfig['path']) ? ltrim($databaseConfig['path'], '/') : 'u937180775_bblessed_db';
-    $port = isset($databaseConfig['port']) ? (int) $databaseConfig['port'] : 3306;
-} else {
-    $host = getenv('DB_HOST') ?: "localhost";
-    $user = getenv('DB_USER') ?: "root";
-    $pass = getenv('DB_PASSWORD') ?: "";
-    $db   = getenv('DB_NAME') ?: "u937180775_bblessed_db";
-    $port = (int) (getenv('DB_PORT') ?: 3306);
+if (!defined('MYSQLI_ASSOC')) {
+    define('MYSQLI_ASSOC', 1);
 }
 
-$conn = new mysqli($host, $user, $pass, $db, $port);
+class SupabaseResult
+{
+    public int $num_rows = 0;
+    private array $rows;
+    private int $position = 0;
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    public function __construct(array $rows = [])
+    {
+        $this->rows = $rows;
+        $this->num_rows = count($rows);
+    }
+
+    public function fetch_assoc(): ?array
+    {
+        if ($this->position >= $this->num_rows) {
+            return null;
+        }
+
+        return $this->rows[$this->position++];
+    }
+
+    public function fetch_all($mode = MYSQLI_ASSOC): array
+    {
+        return $this->rows;
+    }
+
+    public function data_seek(int $offset): bool
+    {
+        if ($offset < 0 || $offset > $this->num_rows) {
+            return false;
+        }
+
+        $this->position = $offset;
+        return true;
+    }
 }
 
-$conn->set_charset("utf8mb4");
+class SupabaseStatement
+{
+    public int $insert_id = 0;
+    public int $affected_rows = 0;
+    public string $error = '';
+
+    private SupabaseConnection $connection;
+    private PDOStatement $statement;
+    private array $params = [];
+    private ?SupabaseResult $result = null;
+    private ?string $returningColumn;
+
+    public function __construct(SupabaseConnection $connection, PDOStatement $statement, ?string $returningColumn = null)
+    {
+        $this->connection = $connection;
+        $this->statement = $statement;
+        $this->returningColumn = $returningColumn;
+    }
+
+    public function bind_param(string $types, &...$values): bool
+    {
+        $this->params = [];
+        foreach ($values as $value) {
+            $this->params[] = $value;
+        }
+        return true;
+    }
+
+    public function execute(): bool
+    {
+        try {
+            $ok = $this->statement->execute($this->params);
+            $this->affected_rows = $this->statement->rowCount();
+            $this->connection->affected_rows = $this->affected_rows;
+
+            if ($this->statement->columnCount() > 0) {
+                $rows = $this->statement->fetchAll(PDO::FETCH_ASSOC);
+                $this->result = new SupabaseResult($rows);
+
+                if ($this->returningColumn && isset($rows[0][$this->returningColumn])) {
+                    $this->insert_id = (int) $rows[0][$this->returningColumn];
+                    $this->connection->insert_id = $this->insert_id;
+                }
+            } else {
+                $this->result = new SupabaseResult();
+            }
+
+            return $ok;
+        } catch (Throwable $e) {
+            $this->error = $e->getMessage();
+            $this->connection->error = $this->error;
+            return false;
+        }
+    }
+
+    public function get_result(): SupabaseResult
+    {
+        return $this->result ?? new SupabaseResult();
+    }
+
+    public function close(): bool
+    {
+        return true;
+    }
+}
+
+class SupabaseConnection
+{
+    public string $connect_error = '';
+    public string $error = '';
+    public int $insert_id = 0;
+    public int $affected_rows = 0;
+
+    private PDO $pdo;
+    private array $primaryKeys = [
+        'admin_forgot_tb' => 'id',
+        'admin_list_login_tb' => 'ID',
+        'admin_login_tb' => 'admin_id',
+        'audit_logs' => 'id',
+        'cart' => 'cart_id',
+        'cart_items' => 'cart_items_id',
+        'category' => 'category_id',
+        'forgot_password_tb' => 'id',
+        'inventory' => 'inventory_id',
+        'login_tb' => 'login_id',
+        'log_history_tb' => 'id',
+        'notifadmin' => 'notif_id',
+        'notifcustomer' => 'notif_id',
+        'notifications' => 'notification_id',
+        'products' => 'product_id',
+        'purchase' => 'purchase_id',
+        'purchase_items' => 'purchase_item_id',
+        'registers_tb' => 'register_id',
+        'reservations' => 'reservation_id',
+        'reservation_items' => 'reservation_item_id',
+        'walk_in' => 'walk_in_id',
+        'walk_in_items' => 'walk_in_item_id',
+    ];
+
+    public function __construct()
+    {
+        $url = getenv('SUPABASE_DB_URL') ?: getenv('DATABASE_URL');
+
+        if ($url) {
+            $config = parse_url($url);
+            $host = $config['host'] ?? '';
+            $port = (int) ($config['port'] ?? 5432);
+            $database = isset($config['path']) ? ltrim($config['path'], '/') : 'postgres';
+            $user = isset($config['user']) ? rawurldecode($config['user']) : '';
+            $password = isset($config['pass']) ? rawurldecode($config['pass']) : '';
+        } else {
+            $host = getenv('DB_HOST') ?: 'localhost';
+            $port = (int) (getenv('DB_PORT') ?: 5432);
+            $database = getenv('DB_NAME') ?: 'postgres';
+            $user = getenv('DB_USER') ?: 'postgres';
+            $password = getenv('DB_PASSWORD') ?: '';
+        }
+
+        try {
+            $dsn = "pgsql:host={$host};port={$port};dbname={$database};sslmode=require";
+            $this->pdo = new PDO($dsn, $user, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+        } catch (Throwable $e) {
+            $this->connect_error = $e->getMessage();
+            die('Connection failed: ' . $this->connect_error);
+        }
+    }
+
+    public function prepare(string $sql)
+    {
+        try {
+            [$sql, $returningColumn] = $this->prepareSql($sql);
+            return new SupabaseStatement($this, $this->pdo->prepare($sql), $returningColumn);
+        } catch (Throwable $e) {
+            $this->error = $e->getMessage();
+            return false;
+        }
+    }
+
+    public function query(string $sql)
+    {
+        try {
+            [$sql, $returningColumn] = $this->prepareSql($sql);
+            $stmt = $this->pdo->query($sql);
+            $this->affected_rows = $stmt->rowCount();
+
+            if ($stmt->columnCount() > 0) {
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if ($returningColumn && isset($rows[0][$returningColumn])) {
+                    $this->insert_id = (int) $rows[0][$returningColumn];
+                }
+                return new SupabaseResult($rows);
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            $this->error = $e->getMessage();
+            return false;
+        }
+    }
+
+    public function real_escape_string(string $value): string
+    {
+        return substr($this->pdo->quote($value), 1, -1);
+    }
+
+    public function begin_transaction(): bool
+    {
+        return $this->pdo->beginTransaction();
+    }
+
+    public function commit(): bool
+    {
+        return $this->pdo->commit();
+    }
+
+    public function rollback(): bool
+    {
+        return $this->pdo->rollBack();
+    }
+
+    public function close(): bool
+    {
+        return true;
+    }
+
+    public function set_charset(string $charset): bool
+    {
+        return true;
+    }
+
+    private function prepareSql(string $sql): array
+    {
+        $sql = $this->translateMysqlSyntax($sql);
+        $sql = $this->quoteMixedCaseColumns($sql);
+        $returningColumn = $this->detectReturningColumn($sql);
+
+        if ($returningColumn && stripos($sql, ' returning ') === false) {
+            $sql = rtrim($sql, " \t\n\r\0\x0B;") . ' RETURNING "' . $returningColumn . '"';
+        }
+
+        return [$sql, $returningColumn];
+    }
+
+    private function detectReturningColumn(string $sql): ?string
+    {
+        if (!preg_match('/^\s*INSERT\s+INTO\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?\s+/i', $sql, $match)) {
+            return null;
+        }
+
+        return $this->primaryKeys[$match[1]] ?? null;
+    }
+
+    private function quoteMixedCaseColumns(string $sql): string
+    {
+        $columns = ['totalAmount', 'purchaseMethod', 'purchaseDate', 'login_TnD', 'Login_at', 'Email', 'Password', 'ID'];
+
+        foreach ($columns as $column) {
+            $sql = preg_replace('/(?<!")\b' . preg_quote($column, '/') . '\b(?!")/', '"' . $column . '"', $sql);
+        }
+
+        return $sql;
+    }
+
+    private function translateMysqlSyntax(string $sql): string
+    {
+        $sql = str_replace('`', '"', $sql);
+        $sql = preg_replace('/\bIFNULL\s*\(/i', 'COALESCE(', $sql);
+        $sql = preg_replace('/\bNOW\s*\(\s*\)/i', 'CURRENT_TIMESTAMP', $sql);
+        $sql = preg_replace('/\bCURDATE\s*\(\s*\)/i', 'CURRENT_DATE', $sql);
+        $sql = preg_replace('/DATE_ADD\s*\(\s*CURRENT_TIMESTAMP\s*,\s*INTERVAL\s+(\d+)\s+DAY\s*\)/i', "(CURRENT_TIMESTAMP + INTERVAL '$1 days')", $sql);
+        $sql = preg_replace('/TIMESTAMPDIFF\s*\(\s*DAY\s*,\s*([^,]+?)\s*,\s*CURRENT_TIMESTAMP\s*\)\s*>=\s*(\d+)/i', "$1 <= CURRENT_TIMESTAMP - INTERVAL '$2 days'", $sql);
+        $sql = preg_replace('/DATEDIFF\s*\(\s*([^,]+?)\s*,\s*CURRENT_DATE\s*\)\s*=\s*(\d+)/i', "$1 = CURRENT_DATE + INTERVAL '$2 days'", $sql);
+        $sql = preg_replace('/\bLIMIT\s+\?/i', 'LIMIT CAST(? AS integer)', $sql);
+
+        return $sql;
+    }
+}
+
+$conn = new SupabaseConnection();
 ?>

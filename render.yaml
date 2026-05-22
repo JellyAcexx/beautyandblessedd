@@ -9,10 +9,12 @@ services:
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        value: 3306
+        value: 5432
       - key: DB_NAME
-        value: u937180775_bblessed_db
+        value: postgres
       - key: DB_USER
-        sync: false
+        value: postgres
       - key: DB_PASSWORD
+        sync: false
+      - key: SUPABASE_DB_URL
         sync: false

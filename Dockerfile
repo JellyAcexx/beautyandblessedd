@@ -3,8 +3,8 @@ FROM php:8.2-apache
 ENV PORT=10000
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends unzip \
-    && docker-php-ext-install mysqli pdo pdo_mysql \
+    && apt-get install -y --no-install-recommends libpq-dev unzip \
+    && docker-php-ext-install pdo pdo_pgsql pgsql \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
