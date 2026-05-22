@@ -1724,13 +1724,14 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     <?php
                     include "database.php";
                     $catQuery = "
-                        SELECT c.*
+                        SELECT DISTINCT c.*
                         FROM category c
                         JOIN products p
                         ON p.category_id = c.category_id
-                        GROUP BY c.category_id
+                        ORDER BY c.category_id
                     ";
                     $catResult = $conn->query($catQuery);
+                    if ($catResult) {
                     while ($cat = $catResult->fetch_assoc()) { ?>
                         <li class="nav-item" role="presentation">
                         <button class="nav-link" style="color: #6d2e3a;" id="tab-<?php echo $cat['category_id']; ?>" data-bs-toggle="tab" 
@@ -1738,7 +1739,8 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                             <?php echo strtoupper($cat['category_name']); ?>
                         </button>
                         </li>
-                    <?php } ?>
+                    <?php }
+                    } ?>
 
                     <!-- ✅ HIDDEN SEARCH TAB (DESKTOP) -->
                     <li class="nav-item d-none">
@@ -1765,6 +1767,7 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
             </li>
 
             <?php 
+            if ($catResult) {
             $catResult->data_seek(0);
 
             while ($cat = $catResult->fetch_assoc()) { ?>
@@ -1776,7 +1779,8 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                         <?php echo strtoupper($cat['category_name']); ?>
                     </button>
                 </li>
-            <?php } ?>
+            <?php }
+            } ?>
 
             <!-- ✅ HIDDEN SEARCH TAB (MOBILE) -->
             <li class="nav-item d-none">
@@ -1855,6 +1859,7 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
 
             <div class="tab-content" id="myTabContent">
                 <?php 
+                    if ($catResult) {
                     $catResult->data_seek(0);
                     while ($cat = $catResult->fetch_assoc()) { ?>
                     <div class="tab-pane fade" id="cat-<?php echo $cat['category_id']; ?>" role="tabpanel">
@@ -1872,6 +1877,7 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                             <div class="row product-grid g-3 justify-content-center" id="productGrid<?php echo $cat['category_id']; ?>">
 
                                 <?php
+                                if ($prodResult) {
                                 while ($row = $prodResult->fetch_assoc()) {
                                     $imgPath = $row['image_path'];
 
@@ -1936,9 +1942,11 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                                         </div>
                                     </div>
                                 <?php } ?>
+                                <?php } ?>
                             </div>
                         </div>
                     </div>
+                <?php } ?>
                 <?php } ?>
             </div>
 
@@ -2182,7 +2190,7 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                         $query = "SELECT * FROM products ORDER BY product_id DESC LIMIT 10";
                         $result = $conn->query($query);
                         $newProds = [];
-                        while ($row = $result->fetch_assoc()) {
+                        while ($result && $row = $result->fetch_assoc()) {
                             $newProds[] = $row;
                         }
                     ?>

@@ -234,6 +234,7 @@ class SupabaseConnection
             return new SupabaseStatement($this, $this->pdo->prepare($sql), $returningColumn);
         } catch (Throwable $e) {
             $this->error = $e->getMessage();
+            error_log('Database prepare failed: ' . $this->error . ' SQL: ' . $sql);
             return false;
         }
     }
@@ -256,6 +257,7 @@ class SupabaseConnection
             return true;
         } catch (Throwable $e) {
             $this->error = $e->getMessage();
+            error_log('Database query failed: ' . $this->error . ' SQL: ' . $sql);
             return false;
         }
     }
