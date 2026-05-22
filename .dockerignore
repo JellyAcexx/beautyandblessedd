@@ -1,0 +1,10 @@
+.git
+.gitignore
+tests
+*.sql
+*.zip
+*.rar
+*.7z
+*.log
+node_modules
+vendor
