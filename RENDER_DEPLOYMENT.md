@@ -8,10 +8,18 @@ Set these in the Render dashboard:
 
 - `SUPABASE_DB_URL`
 
-Use the direct PostgreSQL connection string from Supabase, usually similar to:
+Use the direct PostgreSQL connection string from Supabase:
 
 ```text
 postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+```
+
+In Supabase, you can find it in Project Settings > Database > Connection string.
+
+For local XAMPP testing, create a `.env` file beside `database.php`:
+
+```text
+SUPABASE_DB_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres
 ```
 
 You can also set separate values instead:

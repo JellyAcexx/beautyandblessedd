@@ -3,6 +3,31 @@ if (!defined('MYSQLI_ASSOC')) {
     define('MYSQLI_ASSOC', 1);
 }
 
+loadLocalEnv(__DIR__ . '/.env');
+
+function loadLocalEnv(string $path): void
+{
+    if (!is_file($path) || !is_readable($path)) {
+        return;
+    }
+
+    foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+            continue;
+        }
+
+        [$key, $value] = explode('=', $line, 2);
+        $key = trim($key);
+        $value = trim($value, " \t\n\r\0\x0B\"'");
+
+        if ($key !== '' && getenv($key) === false) {
+            putenv($key . '=' . $value);
+            $_ENV[$key] = $value;
+        }
+    }
+}
+
 class SupabaseResult
 {
     public int $num_rows = 0;
@@ -151,11 +176,25 @@ class SupabaseConnection
             $user = isset($config['user']) ? rawurldecode($config['user']) : '';
             $password = isset($config['pass']) ? rawurldecode($config['pass']) : '';
         } else {
-            $host = getenv('DB_HOST') ?: 'localhost';
+            $host = getenv('DB_HOST');
             $port = (int) (getenv('DB_PORT') ?: 5432);
             $database = getenv('DB_NAME') ?: 'postgres';
             $user = getenv('DB_USER') ?: 'postgres';
-            $password = getenv('DB_PASSWORD') ?: '';
+            $password = getenv('DB_PASSWORD');
+        }
+
+        if (empty($host) || empty($password)) {
+            die(
+                "Connection failed: Missing Supabase database settings. " .
+                "Set SUPABASE_DB_URL in Render environment variables or create a local .env file from .env.example."
+            );
+        }
+
+        if (!in_array('pgsql', PDO::getAvailableDrivers(), true)) {
+            die(
+                "Connection failed: PHP PostgreSQL driver is not installed/enabled. " .
+                "Enable pdo_pgsql in local XAMPP, or deploy to Render using this project's Dockerfile."
+            );
         }
 
         try {
