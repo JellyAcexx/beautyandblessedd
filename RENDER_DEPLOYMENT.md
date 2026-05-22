@@ -8,7 +8,7 @@ Set these in the Render dashboard:
 
 - `SUPABASE_DB_URL`
 
-Use the Supabase **Session Pooler** connection string for Render. The Direct connection can fail in IPv4-only environments because it may resolve to IPv6.
+Use the Supabase **Session Pooler** connection string for Render. The Direct connection can fail in IPv4-only environments because it may resolve to IPv6. Do not commit real database credentials into this repository; copy `.env.example` only as a local template.
 
 ```text
 postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
@@ -21,6 +21,8 @@ For local XAMPP testing, create a `.env` file beside `database.php`:
 ```text
 SUPABASE_DB_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-YOUR_REGION.pooler.supabase.com:5432/postgres
 ```
+
+For Render, paste the same value into the web service's **Environment** tab as `SUPABASE_DB_URL`, or keep it in `render.yaml` with `sync: false` and fill the value during blueprint setup.
 
 You can also set separate values instead:
 

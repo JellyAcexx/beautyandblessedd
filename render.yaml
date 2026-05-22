@@ -6,6 +6,10 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      # Required: paste the Supabase Session Pooler connection string in Render.
+      - key: SUPABASE_DB_URL
+        sync: false
+      # Optional fallback if not using SUPABASE_DB_URL.
       - key: DB_HOST
         sync: false
       - key: DB_PORT
@@ -16,8 +20,7 @@ services:
         value: postgres
       - key: DB_PASSWORD
         sync: false
-      - key: SUPABASE_DB_URL
-        sync: false
+      # Optional Supabase API settings.
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
