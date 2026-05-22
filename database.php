@@ -207,7 +207,13 @@ class SupabaseConnection
             ]);
         } catch (Throwable $e) {
             $this->connect_error = $e->getMessage();
-            die('Connection failed: ' . $this->connect_error);
+            $message = 'Connection failed: ' . $this->connect_error;
+
+            if (str_starts_with($host, 'db.') && str_contains($host, '.supabase.co')) {
+                $message .= ' Use the Supabase Session Pooler connection string instead of the Direct connection string. Direct Supabase database hosts often require IPv6.';
+            }
+
+            die($message);
         }
     }
 
