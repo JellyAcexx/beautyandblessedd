@@ -183,6 +183,8 @@ class SupabaseConnection
             $password = getenv('DB_PASSWORD');
         }
 
+        $host = $this->normalizeSupabaseHost((string) $host);
+
         if (empty($host) || empty($password)) {
             die(
                 "Connection failed: Missing Supabase database settings. " .
@@ -270,6 +272,24 @@ class SupabaseConnection
     public function set_charset(string $charset): bool
     {
         return true;
+    }
+
+    private function normalizeSupabaseHost(string $host): string
+    {
+        $host = trim($host);
+
+        if (str_starts_with($host, 'https://') || str_starts_with($host, 'http://')) {
+            $parsedHost = parse_url($host, PHP_URL_HOST);
+            if (is_string($parsedHost) && $parsedHost !== '') {
+                $host = $parsedHost;
+            }
+        }
+
+        if (preg_match('/^([a-z0-9]+)\.supabase\.co$/i', $host, $match)) {
+            return 'db.' . $match[1] . '.supabase.co';
+        }
+
+        return $host;
     }
 
     private function prepareSql(string $sql): array
