@@ -219,6 +219,10 @@ class SupabaseConnection
                 $message .= ' Use the Supabase Session Pooler connection string instead of the Direct connection string. Direct Supabase database hosts often require IPv6.';
             }
 
+            if (str_contains($host, '.pooler.supabase.com') && $user === 'postgres') {
+                $message .= ' Supabase pooler connections require the pooler user, usually postgres.YOUR_PROJECT_REF, not plain postgres.';
+            }
+
             die($message);
         }
     }

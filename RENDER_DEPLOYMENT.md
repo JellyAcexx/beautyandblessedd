@@ -15,6 +15,7 @@ postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.co
 ```
 
 In Supabase, click **Connect** and choose **Session pooler**.
+If your database password contains URL characters such as `%`, `#`, `@`, `/`, `?`, or `:`, URL-encode the password before placing it in `SUPABASE_DB_URL`. For example, `#` must become `%23` and a literal `%` must become `%25`. The separate `DB_PASSWORD` variable should use the raw password instead.
 
 For local XAMPP testing, create a `.env` file beside `database.php`:
 
@@ -29,7 +30,7 @@ You can also set separate values instead:
 - `DB_HOST`
 - `DB_PORT` default: `5432`
 - `DB_NAME` default: `postgres`
-- `DB_USER` default: `postgres`
+- `DB_USER` for the Session Pooler: `postgres.YOUR_PROJECT_REF`
 - `DB_PASSWORD`
 
 ## Deploy steps
