@@ -1855,9 +1855,6 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="tab-content" id="myTabContent">
                 <?php 
                     if ($catResult) {
                     $catResult->data_seek(0);
@@ -1948,7 +1945,6 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     </div>
                 <?php } ?>
                 <?php } ?>
-            </div>
 
                 <!-- SEARCH RESULTS TAB -->
                 <div class="tab-pane fade" id="search-results" role="tabpanel">
@@ -2031,7 +2027,9 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                         }
                     ?>
                 </div>
+            </div>
 
+            <div id="home-extra-content">
                 <div class="w-100 mt-4" style="background-color:#fff;">
                     <section class="hero-section container py-4 py-md-5 mb-4">
                         <div class="row align-items-center">
@@ -2340,6 +2338,7 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     </div>
                 </section>
             </div>
+            </div>
 
             <div class="modal fade" id="zoomModal" tabindex="-1" aria-labelledby="zoomModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -2567,6 +2566,12 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     '<span style="font-weight:600;">' + categoryTitle + '</span>';
             }
 
+            function setHomeExtraVisible(targetSelector) {
+                const homeExtra = document.getElementById('home-extra-content');
+                if (!homeExtra) return;
+                homeExtra.style.display = targetSelector === '#home' ? '' : 'none';
+            }
+
             document.querySelectorAll('#myTab .nav-link').forEach(btn => {
                 btn.addEventListener('click', function () {
                     const label = (this.textContent || '').trim();
@@ -2581,6 +2586,10 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     } else {
                         setBreadcrumb(label);
                     }
+                });
+
+                btn.addEventListener('shown.bs.tab', function (event) {
+                    setHomeExtraVisible(event.target.getAttribute('data-bs-target'));
                 });
             });
 
@@ -2597,6 +2606,10 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
                     } else {
                         setBreadcrumb(label);
                     }
+                });
+
+                btn.addEventListener('shown.bs.tab', function (event) {
+                    setHomeExtraVisible(event.target.getAttribute('data-bs-target'));
                 });
             });
 
@@ -2616,6 +2629,7 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
             } else {
                 // Default HOME
                 setBreadcrumb('HOME', { isHome: true });
+                setHomeExtraVisible('#home');
             }
         });
 
@@ -2662,20 +2676,24 @@ $login_id = isset($_SESSION['login_id']) ? $_SESSION['login_id'] : null;
         // 🌸 MOBILE FADE
         let mobileSlides = document.querySelectorAll('.mobile-fade-card');
         let mobileIndex = 0;
-        setInterval(() => {
-            mobileSlides[mobileIndex].classList.remove('show');
-            mobileIndex = (mobileIndex + 1) % mobileSlides.length;
-            mobileSlides[mobileIndex].classList.add('show');
-        }, 2000);
+        if (mobileSlides.length > 0) {
+            setInterval(() => {
+                mobileSlides[mobileIndex].classList.remove('show');
+                mobileIndex = (mobileIndex + 1) % mobileSlides.length;
+                mobileSlides[mobileIndex].classList.add('show');
+            }, 2000);
+        }
 
         // 🌸 TABLET FADE
         let tabletSlides = document.querySelectorAll('.tablet-fade-set');
         let tabIndex = 0;
-        setInterval(() => {
-            tabletSlides[tabIndex].classList.remove('show');
-            tabIndex = (tabIndex + 1) % tabletSlides.length;
-            tabletSlides[tabIndex].classList.add('show');
-        }, 2000);
+        if (tabletSlides.length > 0) {
+            setInterval(() => {
+                tabletSlides[tabIndex].classList.remove('show');
+                tabIndex = (tabIndex + 1) % tabletSlides.length;
+                tabletSlides[tabIndex].classList.add('show');
+            }, 2000);
+        }
 
         // ETO NAMAN AY SA FOOTER NATIN , NAVIGATION, SUPPORT US ETC. PAG NAKA DESKTOP SHOW ALL, KAPAG NAKA MOBILE NAKA DOWPDOWN
         document.addEventListener("DOMContentLoaded", () => {
