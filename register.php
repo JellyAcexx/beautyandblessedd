@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Duplicate name check
         $checkName = $conn->query("SELECT * FROM registers_tb WHERE register_fname='$firstname'");
-        if ($checkName->num_rows > 0) {
+        if ($checkName && $checkName->num_rows > 0) {
             $alert_script = "<script>
                 Swal.fire({
                     icon: 'warning',
@@ -45,7 +45,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_POST['firstname'] = "";
         }
         // Duplicate email check
-        elseif ($conn->query("SELECT * FROM registers_tb WHERE register_email = '$email'")->num_rows > 0) {
+        else {
+        $checkEmail = $conn->query("SELECT * FROM registers_tb WHERE register_email = '$email'");
+        if ($checkEmail && $checkEmail->num_rows > 0) {
             $alert_script = "<script>
                 Swal.fire({
                     icon: 'warning',
@@ -63,7 +65,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $sql1 = "INSERT INTO registers_tb (register_fname, register_lname, register_email, phone_number, register_password, created_at)
                      VALUES ('$firstname', '$lastname', '$email', '$phone', '$hashedPassword', NOW())";
 
-            if ($conn->query($sql1) === TRUE) {
+            $registrationResult = $conn->query($sql1);
+
+            if ($registrationResult !== false) {
 
                 // Kunin yung ID ng bagong registered customer
                 $register_id = $conn->insert_id; // last inserted auto-increment id [web:1][web:2]
@@ -72,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $admin_email = "detorresjanellemae@gmail.com";
                 $admin_res = $conn->query("SELECT register_id FROM registers_tb WHERE register_email='$admin_email'");
                 $admin_id = 1; // fallback
-                if ($admin_res->num_rows > 0) {
+                if ($admin_res && $admin_res->num_rows > 0) {
                     $admin_row = $admin_res->fetch_assoc();
                     $admin_id = $admin_row['register_id'];
                 }
@@ -83,9 +87,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $notif_message_admin = "New user registered: $firstname $lastname, Email: $email";
                 $notif_type_admin = 'new_user';
                 $notif_link_admin = '';
-                $notif_stmt->bind_param("isss", $admin_id, $notif_message_admin, $notif_type_admin, $notif_link_admin);
-                $notif_stmt->execute();
-                $notif_stmt->close();
+                if ($notif_stmt) {
+                    $notif_stmt->bind_param("isss", $admin_id, $notif_message_admin, $notif_type_admin, $notif_link_admin);
+                    $notif_stmt->execute();
+                    $notif_stmt->close();
+                }
 
                 // 2. Send email to admin about new user registration
                 $mailAdmin = new PHPMailer(true);
@@ -118,9 +124,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $notif_type = "new_user";
                 $notif_link = "homepage.php";
                 // Types: i = int, s = string; created_at and is_read fixed na sa query [web:6][web:12][web:19]
-                $stmtNotif->bind_param("isss", $register_id, $notif_message, $notif_type, $notif_link);
-                $stmtNotif->execute();
-                $stmtNotif->close();
+                if ($stmtNotif) {
+                    $stmtNotif->bind_param("isss", $register_id, $notif_message, $notif_type, $notif_link);
+                    $stmtNotif->execute();
+                    $stmtNotif->close();
+                }
 
                 // 3. Send welcome email to user
                 $mail = new PHPMailer(true);
@@ -185,6 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </script>";
             }
             $conn->close();
+        }
         }
     }
 }
